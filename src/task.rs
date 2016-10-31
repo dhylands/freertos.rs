@@ -103,6 +103,18 @@ impl TaskBuilder {
     }
 }
 
+extern {
+  pub fn console_putchar(char: i8);
+}
+pub fn message(msg: &str) {
+    for char in msg.chars() {
+        // Lossy converstion from unicode to ASCII
+        let ascii_char = { if char > '\x7f' {'?'} else {char}};
+        unsafe {
+            console_putchar(ascii_char as i8);
+        }
+    }
+}
 
 
 impl Task {
@@ -128,6 +140,7 @@ impl Task {
             let name_len = name.len();
             let mut task_handle = mem::zeroed::<CVoid>();
 
+            message("About to call freertos_rs_spawn_task\n");
             let ret = freertos_rs_spawn_task(thread_start,
                                              param_ptr,
                                              name.as_ptr(),
@@ -148,6 +161,7 @@ impl Task {
         extern "C" fn thread_start(main: *mut CVoid) -> *mut CVoid {
             unsafe {
                 {
+                    message("thread_start\n");
                     let b = Box::from_raw(main as *mut Box<FnBox()>);
                     b();
                 }
